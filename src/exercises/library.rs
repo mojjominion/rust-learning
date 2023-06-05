@@ -29,31 +29,26 @@ impl Library {
     }
 
     fn len(&self) -> usize {
-        // todo!("Return the length of `self.books`")
         self.books.len()
     }
 
     fn is_empty(&self) -> bool {
-        // todo!("Return `true` if `self.books` is empty")
         self.books.is_empty()
     }
 
     fn add_book(&mut self, book: Book) {
-        // todo!("Add a new book to `self.books`")
         self.books.push(book);
         self.books.sort_by(|a, b| a.year.cmp(&b.year))
     }
 
     fn print_books(&self) {
-        // todo!("Iterate over `self.books` and each book's title and year")
         for book in &self.books {
-            println!("Book title: {0}, Book year: {1}\n", book.title, book.year)
+            println!("Book {0} released in year: {1}\n", book.title, book.year)
         }
     }
 
     fn oldest_book(&self) -> Option<&Book> {
-        // todo!("Return a reference to the oldest book (if any)")
-        if !self.is_empty() {
+        if self.is_empty() {
             return None;
         } else {
             return Some(&self.books[0]);
@@ -61,12 +56,8 @@ impl Library {
     }
 }
 
-// This shows the desired behavior. Uncomment the code below and
-// implement the missing methods. You will need to update the
-// method signatures, including the "self" parameter! You may
-// also need to update the variable bindings within main.
 pub(crate) fn library_runner() {
-    let mut library = Library::new();
+    let mut library: Library = Library::new();
 
     println!("The library is empty: {}", library.is_empty());
 
