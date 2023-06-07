@@ -7,5 +7,6 @@ fn main() {
     // lifetime::life_time_different_scope();
 
     exercises::library::library_runner();
-    exercises::health_stats::health_stats()
+    exercises::health_stats::health_stats();
+    exercises::gui_library::run();
 }

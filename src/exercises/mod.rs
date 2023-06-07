@@ -1,3 +1,4 @@
+pub mod gui_library;
 pub mod health_stats;
 pub mod library;
 pub mod luhn_algorithm;
