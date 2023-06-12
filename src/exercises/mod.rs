@@ -4,3 +4,4 @@ pub mod library;
 pub mod luhn_algorithm;
 pub mod points_polygons;
 pub mod prefix_match;
+pub mod safe_ffi;

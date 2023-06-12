@@ -9,4 +9,5 @@ fn main() {
     exercises::library::library_runner();
     exercises::health_stats::health_stats();
     exercises::gui_library::run();
+    exercises::safe_ffi::run().expect("msg");
 }
