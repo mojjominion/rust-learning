@@ -11,5 +11,6 @@ fn main() {
     // exercises::health_stats::health_stats();
     // exercises::gui_library::run();
     // exercises::safe_ffi::run().expect("msg");
-    exercises::dining_philosophers::run();
+    // exercises::dining_philosophers::run();
+    exercises::link_checker::run_parallel();
 }
