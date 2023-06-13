@@ -1,3 +1,4 @@
+#![allow(unused_variables, dead_code)]
 mod exercises;
 
 fn main() {
@@ -6,8 +7,9 @@ fn main() {
     // lifetime::life_time();
     // lifetime::life_time_different_scope();
 
-    exercises::library::library_runner();
-    exercises::health_stats::health_stats();
-    exercises::gui_library::run();
-    exercises::safe_ffi::run().expect("msg");
+    // exercises::library::library_runner();
+    // exercises::health_stats::health_stats();
+    // exercises::gui_library::run();
+    // exercises::safe_ffi::run().expect("msg");
+    exercises::dining_philosophers::run();
 }
