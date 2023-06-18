@@ -12,5 +12,6 @@ fn main() {
     // exercises::gui_library::run();
     // exercises::safe_ffi::run().expect("msg");
     // exercises::dining_philosophers::run();
-    exercises::link_checker::run_parallel();
+    // exercises::link_checker::run_parallel();
+    exercises::dining_philosophers_async::run();
 }

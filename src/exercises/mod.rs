@@ -1,4 +1,5 @@
 pub mod dining_philosophers;
+pub mod dining_philosophers_async;
 pub mod gui_library;
 pub mod health_stats;
 pub mod library;
