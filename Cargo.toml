@@ -1,2 +1,2 @@
 [workspace]
-members = ["basics", "chatapp"]
+members = ["basics", "chatapp", "keyvalue"]

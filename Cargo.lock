@@ -590,6 +590,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyvalue"
+version = "0.1.0"
+dependencies = [
+ "futures-util",
+ "http",
+ "tokio",
+ "tokio-websockets",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,10 +1,11 @@
 #![allow(unused_variables, dead_code)]
 mod exercises;
+pub mod lifetime;
 
 fn main() {
     // matrix_transpose::run_transpose();
     // matrix_transpose::run_transpose_generic();
-    // lifetime::life_time();
+    lifetime::life_time();
     // lifetime::life_time_different_scope();
 
     // exercises::library::library_runner();
