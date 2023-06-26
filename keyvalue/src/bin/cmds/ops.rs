@@ -30,14 +30,13 @@ pub(crate) fn execute_commit(
 ) -> String {
     match transactions.peek() {
         Some(transaction) => {
-            let result = transaction.store.map.clone();
-            for (key, value) in result {
+            for (key, value) in transaction.store.map {
                 global_store.set(key.as_str(), value.as_str());
             }
             transactions.pop_transation();
             TRANSACTION_COMMITED.to_string()
         }
-        None => NO_ACTIVE_TRANSACTION.to_string(),
+        _ => NO_ACTIVE_TRANSACTION.to_string(),
     }
 }
 
@@ -52,8 +51,8 @@ pub(crate) fn execute_set(cmd: &str, transactions: &mut TransactionStack) -> Str
 
     match args[1..] {
         [key, new_value] => match transactions.peek() {
-            Some(transaction) => {
-                let result = transaction.store.set(key, new_value);
+            Some(_) => {
+                let result = transactions.get_top_mut().store.set(key, new_value);
 
                 match result {
                     // If key did exist
@@ -75,8 +74,8 @@ pub(crate) fn execute_get(cmd: &str, transactions: &mut TransactionStack) -> Str
 
     match args[1..] {
         [key, ..] => match transactions.peek() {
-            Some(transaction) => {
-                let result = transaction.store.get(key);
+            Some(_) => {
+                let result = transactions.get_top_mut().store.get(key);
 
                 match result {
                     Some(value) => String::from(value),
@@ -109,8 +108,8 @@ pub(crate) fn execute_delete(cmd: &str, transactions: &mut TransactionStack) -> 
 
     match args[1..] {
         [key, ..] => match transactions.peek() {
-            Some(transaction) => {
-                let result = transaction.store.delete(key);
+            Some(_) => {
+                let result = transactions.get_top_mut().store.delete(key);
                 match result {
                     Some(value) => String::from(value),
                     _ => String::from("Error while deleting entry for key {key:?}"),

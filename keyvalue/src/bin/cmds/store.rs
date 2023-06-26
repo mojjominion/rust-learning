@@ -41,6 +41,7 @@ impl MutationTrait for KeyValueStore {
 
 #[derive(Clone)]
 pub struct Transaction {
+    pub is_dummy: bool,
     pub store: Box<KeyValueStore>,
     pub next: Box<Option<Transaction>>,
 }
@@ -53,11 +54,25 @@ pub struct TransactionStack {
 
 impl TransactionStack {
     pub fn new() -> Self {
-        Self { size: 0, top: None }
+        Self {
+            size: 0,
+            top: Some(Transaction {
+                next: Box::from(None),
+                store: Box::from(KeyValueStore::new()),
+                is_dummy: true,
+            }),
+        }
     }
 
-    pub fn peek(&mut self) -> Option<&mut Transaction> {
-        self.top.as_mut()
+    pub fn peek(&self) -> Option<Transaction> {
+        match &self.top {
+            Some(t) if !t.is_dummy => Some(t.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn get_top_mut(&mut self) -> &mut Transaction {
+        self.top.as_mut().unwrap()
     }
 
     pub fn push_transation(&mut self) {
@@ -68,21 +83,17 @@ impl TransactionStack {
         let new_transaction = Transaction {
             store,
             next: Box::from(self.top.clone()),
+            is_dummy: false,
         };
         self.top = Some(new_transaction);
         self.size += 1;
     }
 
     pub fn pop_transation(&mut self) {
-        match &self.top {
-            Some(trans) => {
-                let next = trans.next.clone().expect("Error while getting  next");
-                self.top = Some(next);
-                self.size -= 1;
-            }
-            _ => {
-                // Ignore no traction case at this level
-            }
-        }
+        let Some(trans) = &self.top else { return };
+
+        let next = trans.next.clone().expect("Error while getting  next");
+        self.top = Some(next);
+        self.size -= 1;
     }
 }
