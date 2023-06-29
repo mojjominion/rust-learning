@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
+
+use tokio::sync::Mutex;
 
 #[allow(unreachable_code, unused, dead_code)]
 
@@ -22,20 +24,62 @@ impl KeyValueStore {
 
 pub trait MutationTrait {
     fn set(&mut self, key: &str, value: &str) -> Option<String>;
-    fn get(&mut self, key: &str) -> Option<&String>;
+    fn get(&mut self, key: &str) -> Option<String>;
     fn delete(&mut self, key: &str) -> Option<String>;
+    fn get_all(&self) -> Vec<(String, String)>;
 }
 
 impl MutationTrait for KeyValueStore {
     fn set(&mut self, key: &str, value: &str) -> Option<String> {
         self.map.insert(key.to_string(), value.to_string())
     }
-    fn get(&mut self, key: &str) -> Option<&String> {
-        self.map.get(key)
+    fn get(&mut self, key: &str) -> Option<String> {
+        self.map.get(key).cloned()
+    }
+    fn get_all(&self) -> Vec<(String, String)> {
+        let res: Vec<_> = self
+            .map
+            .iter()
+            .map(|(key, value)| (key.to_string(), value.to_string()))
+            .collect();
+        res
     }
 
     fn delete(&mut self, key: &str) -> Option<String> {
         self.map.remove(key)
+    }
+}
+
+pub(crate) type TGlobalStore = Arc<Mutex<KeyValueStore>>;
+
+pub(crate) struct GlobalStore {
+    pub inner: TGlobalStore,
+}
+
+impl GlobalStore {
+    pub fn new() -> Self {
+        Self {
+            inner: Arc::new(Mutex::new(KeyValueStore::new())),
+        }
+    }
+
+    pub async fn set(&self, key: &str, value: &str) -> Option<String> {
+        let mut lock = self.inner.lock().await;
+        lock.set(key, value)
+    }
+
+    pub async fn get(&self, key: &str) -> Option<String> {
+        let mut lock = self.inner.lock().await;
+        lock.get(key)
+    }
+
+    pub async fn delete(&self, key: &str) -> Option<String> {
+        let mut lock = self.inner.lock().await;
+        lock.delete(key)
+    }
+
+    fn get_all(&self) -> Vec<(&String, &String)> {
+        todo!()
     }
 }
 
@@ -75,7 +119,7 @@ impl TransactionStack {
         self.top.as_mut().unwrap()
     }
 
-    pub fn push_transation(&mut self) {
+    pub fn push_transation(&mut self) -> usize {
         let store = match &self.top {
             Some(ts) => ts.store.clone(),
             None => Box::from(KeyValueStore::new()),
@@ -87,13 +131,17 @@ impl TransactionStack {
         };
         self.top = Some(new_transaction);
         self.size += 1;
+        self.size
     }
 
-    pub fn pop_transation(&mut self) {
-        let Some(trans) = &self.top else { return };
-
-        let next = trans.next.clone().expect("Error while getting  next");
-        self.top = Some(next);
-        self.size -= 1;
+    pub fn pop_transation(&mut self) -> usize {
+        match self.peek() {
+            Some(transaction) => {
+                self.top = Some(transaction.next.unwrap());
+                self.size -= 1;
+                self.size
+            }
+            _ => 0,
+        }
     }
 }

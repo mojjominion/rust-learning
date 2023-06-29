@@ -1,7 +1,7 @@
 pub mod cmds;
 pub mod libs;
 
-use std::{error::Error, str::FromStr};
+use std::{error::Error, str::FromStr, sync::Arc};
 
 use cmds::cmd_types::CMD;
 use futures_util::sink::SinkExt;
@@ -14,13 +14,18 @@ use crate::cmds::{
         execute_begin, execute_commit, execute_count, execute_delete, execute_end, execute_get,
         execute_rollback, execute_set,
     },
-    store::{KeyValueStore, TransactionStack},
+    store::{GlobalStore, KeyValueStore, TransactionStack},
 };
 
-async fn transation_handler(client: &mut User, cmd: &str) -> Result<String, String> {
+async fn transation_handler(
+    client: &mut User,
+    cmd: &str,
+    gs: Arc<GlobalStore>,
+) -> Result<String, String> {
     let args: Vec<_> = cmd.split(" ").collect();
     let operation = CMD::from_str(args[0])?;
-    let (transaction_stack, global_store) = client.get_state();
+
+    let transaction_stack = client.get_state();
 
     let operation_result = match operation {
         CMD::BEGIN => {
@@ -29,11 +34,11 @@ async fn transation_handler(client: &mut User, cmd: &str) -> Result<String, Stri
         }
         CMD::SET => {
             println!("Process {:?}", operation);
-            execute_set(cmd, transaction_stack)
+            execute_set(cmd, transaction_stack, gs).await
         }
         CMD::GET => {
             println!("Process {:?}", operation);
-            execute_get(cmd, transaction_stack)
+            execute_get(cmd, transaction_stack, gs).await
         }
         CMD::COUNT => {
             println!("Process {:?}", operation);
@@ -41,11 +46,11 @@ async fn transation_handler(client: &mut User, cmd: &str) -> Result<String, Stri
         }
         CMD::DELETE => {
             println!("Process {:?}", operation);
-            execute_delete(cmd, transaction_stack)
+            execute_delete(cmd, transaction_stack, gs).await
         }
         CMD::COMMIT => {
             println!("Process {:?}", operation);
-            execute_commit(transaction_stack, global_store)
+            execute_commit(transaction_stack, gs).await
         }
         CMD::ROLLBACK => {
             println!("Process {:?}", operation);
@@ -63,16 +68,19 @@ async fn transation_handler(client: &mut User, cmd: &str) -> Result<String, Stri
 async fn handle_connection(
     client: &mut User,
     mut ws_stream: WebsocketStream<TcpStream>,
+    gs: Arc<GlobalStore>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     ws_stream
         .send(Message::text("Welcome to the KeyValueStore".into()))
         .await?;
 
     loop {
+        let gs = Arc::clone(&gs);
+
         tokio::select! {
          msg = ws_stream.next() => {
             if let Some(Ok(value)) = msg {
-                let result = transation_handler(client, value.as_text().unwrap()).await;
+                let result = transation_handler(client, value.as_text().unwrap(), gs).await;
 
                 match result {
                     Ok(res) => ws_stream.send(Message::text(res).into()).await?,
@@ -90,26 +98,21 @@ pub async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let listener = TcpListener::bind("127.0.0.1:2000").await?;
     println!("listening on port 2000");
     let mut client_count = 1;
+    let global_store = Arc::from(GlobalStore::new());
 
     loop {
         let (socket, addr) = listener.accept().await?;
-
         println!("New connection from {addr:?} {:?}", client_count);
 
-        let mut client = User::new(
-            client_count,
-            Box::new(TransactionStack::new()),
-            Box::new(KeyValueStore::new()),
-        );
+        let mut client = User::new(client_count, Box::new(TransactionStack::new()));
+        let gs = Arc::clone(&global_store);
 
         client_count += 1;
-
         // let bcast_tx = bcast_tx.clone();
         tokio::spawn(async move {
             // Wrap the raw TCP stream into a websocket.
             let ws_stream = ServerBuilder::new().accept(socket).await?;
-
-            handle_connection(&mut client, ws_stream).await
+            handle_connection(&mut client, ws_stream, gs).await
         });
     }
 }

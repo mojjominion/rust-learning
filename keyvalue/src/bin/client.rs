@@ -1,17 +1,22 @@
-use std::io::{self, Write};
+use std::{
+    io::{self, Write},
+    process,
+};
 
 use futures_util::SinkExt;
 use http::Uri;
 use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio_websockets::{ClientBuilder, Message};
+use tokio_websockets::{ClientBuilder, Error, Message};
 
 fn print_cli_interface() {
     print!("cmd:> ");
     io::stdout().flush().unwrap();
 }
 
+static EXIT: &str = "EXIT";
+
 #[tokio::main]
-async fn main() -> Result<(), tokio_websockets::Error> {
+pub async fn main() -> Result<(), Error> {
     let mut ws_stream = ClientBuilder::from_uri(Uri::from_static("ws://127.0.0.1:2000"))
         .connect()
         .await?;
@@ -36,6 +41,10 @@ async fn main() -> Result<(), tokio_websockets::Error> {
             line = stdin.next_line() => {
                 match line {
                     Ok(Some(msg)) => {
+                        if msg.to_uppercase() == EXIT {
+                            process::exit(0);
+                        }
+
                         ws_stream.send(Message::text(msg)).await?;
                         print_cli_interface();
                     },
