@@ -1,4 +1,4 @@
-use crate::cmds::store::TransactionStack;
+use crate::cmds::transactions::TransactionStack;
 
 #[derive(Clone)]
 pub(crate) struct User {
@@ -14,7 +14,7 @@ impl User {
         }
     }
 
-    pub fn get_state(&mut self) -> (&mut TransactionStack) {
+    pub fn get_state(&mut self) -> &mut TransactionStack {
         self.transaction_stack.as_mut()
     }
 }

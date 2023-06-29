@@ -2,9 +2,7 @@
 
 use std::sync::Arc;
 
-use crate::cmds::store::MutationTrait;
-
-use super::store::{GlobalStore, KeyValueStore, TransactionStack};
+use super::{global_store::GlobalStore, store::MutationTrait, transactions::TransactionStack};
 
 #[derive(Debug)]
 struct AppArgs(String);
@@ -63,19 +61,6 @@ pub(crate) fn execute_rollback(transactions: &mut TransactionStack) -> String {
     }
 }
 
-async fn set_to_global(key: &str, new_value: &str, global_store: Arc<GlobalStore>) -> String {
-    let result = global_store.set(key, new_value).await;
-
-    match result {
-        Some(old_value) => String::from(format!(
-            "Global Store:: The value for {key:?} is updated from {old_value:?} to {new_value}"
-        )),
-        None => String::from(format!(
-            "Global Store:: The value for {key:?} is set to {new_value:?}"
-        )),
-    }
-}
-
 pub(crate) async fn execute_set(
     cmd: &str,
     transactions: &mut TransactionStack,
@@ -96,17 +81,9 @@ pub(crate) async fn execute_set(
                     None => String::from(format!("The value for {key:?} is set to {new_value:?}")),
                 }
             }
-            None => set_to_global(key, new_value, global_store).await,
+            None => global_store.set(key, new_value).await,
         },
         _ => BAD_ARGS.to_string(),
-    }
-}
-
-async fn get_from_global(key: &str, global_store: Arc<GlobalStore>) -> String {
-    let result = global_store.get(key).await;
-    match result {
-        Some(value) => value.to_string(),
-        _ => String::from(format!("No entry found for key {key:?}")),
     }
 }
 
@@ -121,9 +98,9 @@ pub(crate) async fn execute_get(
         [key, ..] => match transactions.peek() {
             Some(mut transaction) => match transaction.store.get(key) {
                 Some(value) => value.to_string(),
-                _ => get_from_global(key, global_store).await,
+                _ => global_store.get(key).await,
             },
-            _ => get_from_global(key, global_store).await,
+            _ => global_store.get(key).await,
         },
         _ => BAD_ARGS.to_string(),
     }
@@ -141,16 +118,6 @@ pub(crate) fn execute_count(cmd: &str, transactions: &mut TransactionStack) -> S
             _ => NO_ACTIVE_TRANSACTION.to_string(),
         },
         _ => BAD_ARGS.to_string(),
-    }
-}
-
-async fn delete_from_global(key: &str, global_store: Arc<GlobalStore>) -> String {
-    let result = global_store.delete(key).await;
-    match result {
-        Some(value) => String::from(format!(
-            "Global Store:: The entry [ {key:?}:{value:?} ] is deleted"
-        )),
-        None => String::from("Global Store:: Error while deleting entry for key {key:?}"),
     }
 }
 
@@ -172,7 +139,7 @@ pub(crate) async fn execute_delete(
                     _ => String::from("Error while deleting entry for key {key:?}"),
                 }
             }
-            None => delete_from_global(key, global_store).await,
+            None => global_store.delete(key).await,
         },
         _ => BAD_ARGS.to_string(),
     }

@@ -3,7 +3,7 @@ pub mod libs;
 
 use std::{error::Error, str::FromStr, sync::Arc};
 
-use cmds::cmd_types::CMD;
+use cmds::{cmd_types::CMD, global_store::GlobalStore};
 use futures_util::sink::SinkExt;
 use libs::user::User;
 use tokio::net::{TcpListener, TcpStream};
@@ -14,7 +14,7 @@ use crate::cmds::{
         execute_begin, execute_commit, execute_count, execute_delete, execute_end, execute_get,
         execute_rollback, execute_set,
     },
-    store::{GlobalStore, KeyValueStore, TransactionStack},
+    transactions::TransactionStack,
 };
 
 async fn transation_handler(
@@ -102,11 +102,11 @@ pub async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     loop {
         let (socket, addr) = listener.accept().await?;
-        println!("New connection from {addr:?} {:?}", client_count);
 
         let mut client = User::new(client_count, Box::new(TransactionStack::new()));
         let gs = Arc::clone(&global_store);
 
+        println!("New connection from {addr:?} {:?}", client.id);
         client_count += 1;
         // let bcast_tx = bcast_tx.clone();
         tokio::spawn(async move {
