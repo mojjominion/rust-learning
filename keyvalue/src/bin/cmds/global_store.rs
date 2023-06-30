@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use super::store::{KeyValueStore, MutationTrait};
+use super::store::{KeyValueStore, MutationTrait, TStore};
 
 pub(crate) struct GlobalStore {
     pub inner: Arc<Mutex<KeyValueStore>>,
@@ -15,6 +15,11 @@ impl GlobalStore {
         }
     }
 
+    pub async fn set_multi(&self, data: TStore) -> String {
+        let mut lock = self.inner.lock().await;
+        lock.sel_multi(data);
+        String::from(format!("Global Store:: Transaction Committed"))
+    }
     pub async fn set(&self, key: &str, new_value: &str) -> String {
         let mut lock = self.inner.lock().await;
         let result = lock.set(key, new_value);

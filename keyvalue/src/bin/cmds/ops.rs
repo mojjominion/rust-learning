@@ -35,9 +35,7 @@ pub(crate) async fn execute_commit(
 ) -> String {
     match transactions.peek() {
         Some(transaction) => {
-            for (key, value) in transaction.store.map {
-                global_store.set(key.as_str(), value.as_str()).await;
-            }
+            global_store.set_multi(transaction.store.map).await;
             let size = transactions.pop_transation();
             format!(
                 "{}, Total Active transactions: {}",
