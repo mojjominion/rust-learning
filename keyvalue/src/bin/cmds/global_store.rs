@@ -18,41 +18,41 @@ impl GlobalStore {
     pub async fn set_multi(&self, data: TStore) -> String {
         let mut lock = self.inner.lock().await;
         lock.sel_multi(data);
-        String::from(format!("Global Store:: Transaction Committed"))
+        format!("Global Store:: Transaction Committed")
     }
-    pub async fn set(&self, key: &str, new_value: &str) -> String {
+    pub async fn set(&self, key: &str, new_value: &str) -> Result<String, String> {
         let mut lock = self.inner.lock().await;
         let result = lock.set(key, new_value);
 
         match result {
-            Some(old_value) => String::from(format!(
+            Some(old_value) => Ok(format!(
                 "Global Store:: The value for {key:?} is updated from {old_value:?} to {new_value}"
             )),
-            None => String::from(format!(
+            None => Ok(format!(
                 "Global Store:: The value for {key:?} is set to {new_value:?}"
             )),
         }
     }
 
-    pub async fn get(&self, key: &str) -> String {
+    pub async fn get(&self, key: &str) -> Result<String, String> {
         let mut lock = self.inner.lock().await;
         let result = lock.get(key);
 
         match result {
-            Some(value) => value.to_string(),
-            None => String::from(format!("Global Store:: No entry found for key {key:?}")),
+            Some(value) => Ok(value.to_string()),
+            None => Err(format!("Global Store:: No entry found for key {key:?}")),
         }
     }
 
-    pub async fn delete(&self, key: &str) -> String {
+    pub async fn delete(&self, key: &str) -> Result<String, String> {
         let mut lock = self.inner.lock().await;
         let result = lock.delete(key);
 
         match result {
-            Some(value) => String::from(format!(
+            Some(value) => Ok(format!(
                 "Global Store:: The entry [ {key:?}:{value:?} ] is deleted"
             )),
-            None => String::from("Global Store:: Error while deleting entry for key {key:?}"),
+            None => Err("Global Store:: Error while deleting entry for key {key:?}".to_string()),
         }
     }
 

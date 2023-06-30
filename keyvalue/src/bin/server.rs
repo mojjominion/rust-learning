@@ -22,12 +22,12 @@ async fn transation_handler(
     cmd: &str,
     gs: Arc<GlobalStore>,
 ) -> Result<String, String> {
+    let transaction_stack = client.get_state();
+
     let args: Vec<_> = cmd.split(" ").collect();
     let operation = CMD::from_str(args[0])?;
 
-    let transaction_stack = client.get_state();
-
-    let operation_result = match operation {
+    match operation {
         CMD::BEGIN => {
             println!("Process {:?}", operation);
             execute_begin(transaction_stack)
@@ -60,9 +60,7 @@ async fn transation_handler(
             println!("Process {:?}", operation);
             execute_end(transaction_stack)
         }
-    };
-
-    Ok(String::from(operation_result))
+    }
 }
 
 async fn handle_connection(
@@ -83,8 +81,8 @@ async fn handle_connection(
                 let result = transation_handler(client, value.as_text().unwrap(), gs).await;
 
                 match result {
-                    Ok(res) => ws_stream.send(Message::text(res).into()).await?,
-                    Err(err) => ws_stream.send(Message::text(err).into()).await?
+                    Ok(res) => ws_stream.send(Message::text(res)).await?,
+                    Err(err) => ws_stream.send(Message::text(err)).await?
                 };
             }
          }
