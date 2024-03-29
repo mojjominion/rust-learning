@@ -18,7 +18,7 @@ impl GlobalStore {
     pub async fn set_multi(&self, data: TStore) -> String {
         let mut lock = self.inner.lock().await;
         lock.sel_multi(data);
-        format!("Global Store:: Transaction Committed")
+        "Global Store:: Transaction Committed".to_string()
     }
     pub async fn set(&self, key: &str, new_value: &str) -> Result<String, String> {
         let mut lock = self.inner.lock().await;
@@ -39,7 +39,7 @@ impl GlobalStore {
         let result = lock.get(key);
 
         match result {
-            Some(value) => Ok(value.to_string()),
+            Some(value) => Ok(value),
             None => Err(format!("Global Store:: No entry found for key {key:?}")),
         }
     }

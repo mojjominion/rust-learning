@@ -70,7 +70,7 @@ pub(crate) async fn execute_set(
     transactions: &mut TransactionStack,
     global_store: Arc<GlobalStore>,
 ) -> Result<String, String> {
-    let args: Vec<_> = cmd.split(" ").collect();
+    let args: Vec<_> = cmd.split(' ').collect();
 
     match args[1..] {
         [key, new_value] => match transactions.peek() {
@@ -78,9 +78,9 @@ pub(crate) async fn execute_set(
                 let result = transactions.get_top_mut().store.set(key, new_value);
                 match result {
                     // If key did exist
-                    Some(old_value) => Ok(String::from(format!(
+                    Some(old_value) => Ok(format!(
                         "The value for {key:?} is updated from {old_value:?} to {new_value}"
-                    ))),
+                    )),
                     // If key didn't exist
                     None => Err(format!("The value for {key:?} is set to {new_value:?}")),
                 }
@@ -96,12 +96,12 @@ pub(crate) async fn execute_get(
     transactions: &mut TransactionStack,
     global_store: Arc<GlobalStore>,
 ) -> Result<String, String> {
-    let args: Vec<_> = cmd.split(" ").collect();
+    let args: Vec<_> = cmd.split(' ').collect();
 
     match args[1..] {
         [key, ..] => match transactions.peek() {
             Some(mut transaction) => match transaction.store.get(key) {
-                Some(value) => Ok(value.to_string()),
+                Some(value) => Ok(value),
                 _ => global_store.get(key).await,
             },
             _ => global_store.get(key).await,
@@ -114,7 +114,7 @@ pub(crate) fn execute_count(
     cmd: &str,
     transactions: &mut TransactionStack,
 ) -> Result<String, String> {
-    let args: Vec<_> = cmd.split(" ").collect();
+    let args: Vec<_> = cmd.split(' ').collect();
 
     match args[1..] {
         [key, ..] => match transactions.peek() {
@@ -133,7 +133,7 @@ pub(crate) async fn execute_delete(
     transactions: &mut TransactionStack,
     global_store: Arc<GlobalStore>,
 ) -> Result<String, String> {
-    let args: Vec<_> = cmd.split(" ").collect();
+    let args: Vec<_> = cmd.split(' ').collect();
 
     match args[1..] {
         [key, ..] => match transactions.peek() {

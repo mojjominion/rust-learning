@@ -9,6 +9,12 @@ pub struct KeyValueStore {
     pub map: TStore,
 }
 
+impl Default for KeyValueStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl KeyValueStore {
     pub fn new() -> Self {
         Self {

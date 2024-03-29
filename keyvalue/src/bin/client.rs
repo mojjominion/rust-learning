@@ -1,29 +1,23 @@
+use futures_util::SinkExt;
+use http::Uri;
 use std::{
     io::{self, Write},
     process,
 };
+use tokio::{
+    io::{AsyncBufReadExt, BufReader},
+    net::TcpStream,
+};
+use tokio_websockets::{ClientBuilder, Error, MaybeTlsStream, Message, WebsocketStream};
 
-use futures_util::SinkExt;
-use http::Uri;
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio_websockets::{ClientBuilder, Error, Message};
-
+static EXIT: &str = "EXIT";
 fn print_cli_interface() {
     print!("cmd:> ");
     io::stdout().flush().unwrap();
 }
 
-static EXIT: &str = "EXIT";
-
-#[tokio::main]
-pub async fn main() -> Result<(), Error> {
-    let mut ws_stream = ClientBuilder::from_uri(Uri::from_static("ws://127.0.0.1:2000"))
-        .connect()
-        .await?;
-
-    let stdin = tokio::io::stdin();
-    let mut stdin = BufReader::new(stdin).lines();
-
+pub async fn run(mut ws_stream: WebsocketStream<MaybeTlsStream<TcpStream>>) -> Result<(), Error> {
+    let mut stdin = BufReader::new(tokio::io::stdin()).lines();
     loop {
         tokio::select! {
             incoming = ws_stream.next() => {
@@ -44,7 +38,6 @@ pub async fn main() -> Result<(), Error> {
                         if msg.to_uppercase() == EXIT {
                             process::exit(0);
                         }
-
                         ws_stream.send(Message::text(msg)).await?;
                         print_cli_interface();
                     },
@@ -56,4 +49,12 @@ pub async fn main() -> Result<(), Error> {
             }
         }
     }
+}
+
+#[tokio::main]
+pub async fn main() -> Result<(), Error> {
+    let ws_stream = ClientBuilder::from_uri(Uri::from_static("ws://127.0.0.1:2000"))
+        .connect()
+        .await?;
+    run(ws_stream).await
 }
